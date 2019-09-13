@@ -198,14 +198,14 @@ jobs:
           name: Run the scenario
           command: deployment-e2e/molecule.sh monitor
           no_output_timeout: 40m
-  deployment-all:
+  deployment-three-on-one-host:
     executor: tokenbridge-orb/machine-with-docker-caching
     steps:
       - checkout
       - run: git submodule update --init
       - run: 
           name: Run the scenario
-          command: deployment-e2e/molecule.sh all
+          command: deployment-e2e/molecule.sh three-on-one-host
           no_output_timeout: 40m
   deployment-repo:
     executor: tokenbridge-orb/machine-with-docker-caching
@@ -280,7 +280,7 @@ workflows:
       - deployment-ui
       - deployment-monitor
       - deployment-repo
-      - deployment-all:
+      - deployment-three-on-one-host:
           requires:
             - deployment-oracle
             - deployment-ui
