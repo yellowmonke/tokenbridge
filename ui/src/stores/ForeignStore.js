@@ -31,7 +31,9 @@ import {
   getValidatorList,
   getValidatorContract,
   getRequiredSignatures,
-  getValidatorCount
+  getValidatorCount,
+  getInvestedAmount,
+  getSaiTokenAddress
 } from './utils/contract'
 import { balanceLoaded, removePendingTransaction } from './utils/testUtils'
 import sleep from './utils/sleep'
@@ -187,6 +189,10 @@ class ForeignStore {
           ? await getErc20TokenAddress(this.foreignBridge)
           : await getErc677TokenAddress(this.foreignBridge)
       this.tokenContract = new this.foreignWeb3.eth.Contract(ERC677_BRIDGE_TOKEN_ABI, this.tokenAddress)
+      if (this.rootStore.bridgeMode === BRIDGE_MODES.ERC_TO_NATIVE) {
+        this.saiTokenAddress = await getSaiTokenAddress(this.foreignBridge)
+        this.saiTokenContract = new this.foreignWeb3.eth.Contract(ERC677_BRIDGE_TOKEN_ABI, this.saiTokenAddress)
+      }
       this.tokenType = await getTokenType(this.tokenContract, this.COMMON_FOREIGN_BRIDGE_ADDRESS)
       const alternativeContract = new this.foreignWeb3.eth.Contract(ERC20_BYTES32_ABI, this.tokenAddress)
       try {
@@ -211,7 +217,19 @@ class ForeignStore {
     try {
       this.totalSupply = await getTotalSupply(this.tokenContract)
       this.web3Store.getWeb3Promise.then(async () => {
-        this.balance = await getBalanceOf(this.tokenContract, this.web3Store.defaultAccount.address)
+        if (this.rootStore.bridgeMode === BRIDGE_MODES.ERC_TO_NATIVE) {
+          const balances = await Promise.all([
+            getBalanceOf(this.tokenContract, this.web3Store.defaultAccount.address), // balance in DAI
+            getBalanceOf(this.saiTokenContract, this.web3Store.defaultAccount.address), // balance in SAI
+            getInvestedAmount(this.foreignBridge, await getDecimals(this.tokenContract)) // balance in CHAI
+          ])
+          this.balance = new BN(balances[0])
+            .add(balances[1])
+            .add(balances[2])
+            .toString(10)
+        } else {
+          this.balance = await getBalanceOf(this.tokenContract, this.web3Store.defaultAccount.address)
+        }
         balanceLoaded()
       })
     } catch (e) {

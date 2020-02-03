@@ -34,6 +34,8 @@ export const getErc677TokenAddress = contract => contract.methods.erc677token().
 
 export const getErc20TokenAddress = contract => contract.methods.erc20token().call()
 
+export const getSaiTokenAddress = contract => contract.methods.halfDuplexErc20token().call()
+
 export const getSymbol = contract => contract.methods.symbol().call()
 
 export const getDecimals = contract => contract.methods.decimals().call()
@@ -49,6 +51,11 @@ export const getTotalSupply = async contract => {
 export const getBalanceOf = async (contract, address) => {
   const balance = await contract.methods.balanceOf(address).call()
   const decimals = await contract.methods.decimals().call()
+  return fromDecimals(balance, decimals)
+}
+
+export const getInvestedAmount = async (contract, decimals) => {
+  const balance = await contract.methods.investedAmountInDai().call()
   return fromDecimals(balance, decimals)
 }
 
