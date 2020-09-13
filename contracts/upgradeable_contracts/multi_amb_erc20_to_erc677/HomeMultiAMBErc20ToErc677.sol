@@ -104,7 +104,7 @@ contract HomeMultiAMBErc20ToErc677 is BasicMultiAMBErc20ToErc677, HomeFeeManager
         } else if (bytes(symbol).length == 0) {
             symbol = name;
         }
-        name = string(abi.encodePacked(name, " on xDai"));
+        name = string(abi.encodePacked(name, " on Fuse"));
         address homeToken = new TokenProxy(tokenImage(), name, symbol, _decimals, bridgeContract().sourceChainId());
         _setTokenAddressPair(_token, homeToken);
         _initializeTokenBridgeLimits(homeToken, _decimals);
@@ -208,7 +208,7 @@ contract HomeMultiAMBErc20ToErc677 is BasicMultiAMBErc20ToErc677, HomeFeeManager
     */
     function homeTokenAddress(address _foreignToken) public view returns (address) {
         return addressStorage[keccak256(abi.encodePacked("homeTokenAddress", _foreignToken))];
-    }
+    }homeTokenAddress
 
     /**
     * @dev Retrieves address of the foreign bridged token contract associated with a specific home token contract.
