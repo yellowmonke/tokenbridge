@@ -59,7 +59,7 @@ export const CONFIRMATIONS_STATUS_DESCRIPTION_HOME: { [key: string]: string } = 
   EXECUTION_PENDING:
     'The specified transaction was included in a block\nand the validators collected signatures. The\nvalidator’s transaction with collected signatures was\nsent but is not yet added to a block.',
   EXECUTION_WAITING:
-    'The specified transaction was included in a block\nand the validators collected signatures. Either\n1. One of the validators is waiting for chain finalization.\n2. A validator skipped its duty to relay signatures.\nCheck status again after a few blocks. If the issue still persists contact the support team messaging on %linkhttps://t.me/fuseio',
+    'The specified transaction was included in a block\nand the validators collected signatures. Either\n1. One of the validators is waiting for chain finalization.\n2. A validator skipped its duty to relay signatures.\n3. The execution transaction is still pending (e.g. due to the gas price spike).\nCheck status again after a few blocks. If the issue still persists contact to the validators by messaging on %linkhttps://t.me/fuseio',
   FAILED:
     'The specified transaction was included in a block,\nbut transactions with signatures sent by a majority of\nvalidators failed. The cross-chain relay request will\nnot be processed. Contact the support team\nmessaging on %linkhttps://t.me/fuseio',
   PENDING:
