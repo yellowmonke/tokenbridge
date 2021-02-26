@@ -174,8 +174,8 @@ export const filterValidatorSignatureTransaction = (
   const messageDataValue = messageData.replace('0x', '')
   return transactions.filter(
     t =>
-      (t.input.includes(SUBMIT_SIGNATURE_HASH) || t.input.includes(EXECUTE_AFFIRMATION_HASH)) &&
-      t.input.includes(messageDataValue)
+      ((t.input.includes(SUBMIT_SIGNATURE_HASH) && t.input.includes(messageDataValue)) || 
+      (t.input.includes(EXECUTE_AFFIRMATION_HASH) && t.input.includes(messageDataValue.substr(0, 40 + 64 + 64))))
   )
 }
 
@@ -194,7 +194,6 @@ export const getValidatorFailedTransactionsForMessage = async ({
     HOME_EXPLORER_API,
     fetchAccountTransactionsFromBlockscout
   )
-
   return filterValidatorSignatureTransaction(failedTransactions, messageData)
 }
 
@@ -213,7 +212,6 @@ export const getValidatorSuccessTransactionsForMessage = async ({
     HOME_EXPLORER_API,
     fetchAccountTransactionsFromBlockscout
   )
-
   return filterValidatorSignatureTransaction(transactions, messageData)
 }
 
@@ -249,8 +247,8 @@ export const getValidatorPendingTransactionsForMessage = async (
   return pendingTransactions.filter(
     t =>
       t.to.toLowerCase() === toAddressLowerCase &&
-      (t.input.includes(SUBMIT_SIGNATURE_HASH) || t.input.includes(EXECUTE_AFFIRMATION_HASH)) &&
-      t.input.includes(messageDataValue)
+      ((t.input.includes(SUBMIT_SIGNATURE_HASH) && t.input.includes(messageDataValue)) || 
+      (t.input.includes(EXECUTE_AFFIRMATION_HASH) && t.input.includes(messageData.substr(0, 40 + 64 + 64)))) // recipient:20 bytes , value:32 bytes(uint256) , txhash:32 bytes
   )
 }
 

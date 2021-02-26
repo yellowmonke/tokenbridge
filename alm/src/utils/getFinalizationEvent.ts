@@ -8,7 +8,7 @@ import {
   GetFailedTransactionParams,
   GetPendingTransactionParams
 } from './explorer'
-import { getBlock, MessageObject } from './web3'
+import { getBlock, NativeMessageObject, ArbitraryMessageObject, encodeNativeMessageObject } from './web3'
 import validatorsCache from '../services/ValidatorsCache'
 
 export const getFinalizationEvent = async (
@@ -17,7 +17,7 @@ export const getFinalizationEvent = async (
   web3: Maybe<Web3>,
   setResult: React.Dispatch<React.SetStateAction<ExecutionData>>,
   waitingBlocksResolved: boolean,
-  message: MessageObject,
+  message: NativeMessageObject,
   interval: number,
   subscriptions: number[],
   timestamp: number,
@@ -30,13 +30,21 @@ export const getFinalizationEvent = async (
   if (!contract || !web3 || !waitingBlocksResolved) return
   // Since it filters by the message id, only one event will be fetched
   // so there is no need to limit the range of the block to reduce the network traffic
-  const events: EventData[] = await contract.getPastEvents(eventName, {
+  const eevents: EventData[] = await contract.getPastEvents(eventName, {
     fromBlock: 0,
     toBlock: 'latest',
     filter: {
-      messageId: message.id
+      recipient : message.recipient,
+      value : message.value,
+      transactionHash: message.txhash
     }
   })
+  const events = eevents.filter((e:EventData) => 
+    e.returnValues.recipient == message.recipient &&
+    e.returnValues.value == message.value &&
+    e.returnValues.transactionHash == message.txhash  
+  )
+  
   if (events.length > 0) {
     const event = events[0]
     const [txReceipt, block] = await Promise.all([
@@ -52,7 +60,7 @@ export const getFinalizationEvent = async (
       validator: validatorAddress,
       txHash: event.transactionHash,
       timestamp: blockTimestamp,
-      executionResult: event.returnValues.status
+      executionResult: true //event.returnValues.status CHECK
     })
   } else {
     // If event is defined, it means it is a message from Home to Foreign
@@ -61,7 +69,7 @@ export const getFinalizationEvent = async (
 
       const pendingTransactions = await getPendingExecution({
         account: validator,
-        messageData: message.data,
+        messageData: encodeNativeMessageObject(message , web3),
         to: contract.options.address
       })
 
@@ -79,15 +87,15 @@ export const getFinalizationEvent = async (
           executionResult: false
         })
         setPendingExecution(true)
-      } else {
-        const validatorExecutionCacheKey = `${CACHE_KEY_EXECUTION_FAILED}${validator}-${message.id}`
+      } else {//something might go wrong here
+        const validatorExecutionCacheKey = `${CACHE_KEY_EXECUTION_FAILED}${validator}-${message._hash}`
         const failedFromCache = validatorsCache.get(validatorExecutionCacheKey)
 
         if (!failedFromCache) {
           const failedTransactions = await getFailedExecution({
             account: validator,
             to: contract.options.address,
-            messageData: message.data,
+            messageData: encodeNativeMessageObject(message , web3),
             startTimestamp: timestamp,
             endTimestamp: timestamp + THREE_DAYS_TIMESTAMP
           })

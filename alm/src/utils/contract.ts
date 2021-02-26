@@ -1,6 +1,7 @@
 import { Contract } from 'web3-eth-contract'
 import { EventData } from 'web3-eth-contract'
 import { SnapshotProvider } from '../services/SnapshotProvider'
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants'
 
 export const getRequiredBlockConfirmations = async (
   contract: Contract,
@@ -63,10 +64,23 @@ export const getValidatorList = async (contract: Contract, blockNumber: number, 
   const addedEventsFromSnapshot = snapshotProvider.validatorAddedEvents(blockNumber)
   const removedEventsFromSnapshot = snapshotProvider.validatorRemovedEvents(blockNumber)
   const snapshotBlockNumber = snapshotProvider.snapshotBlockNumber()
+  
+  // const fromBlock = snapshotBlockNumber > blockNumber ? snapshotBlockNumber + 1 : blockNumber
+  const fromBlock = 0;
+  // const x = await contract.methods.validatorList().call()
+  // console.log(x);
 
-  const fromBlock = snapshotBlockNumber > blockNumber ? snapshotBlockNumber + 1 : blockNumber
-  const [currentList, added, removed] = await Promise.all([
-    contract.methods.validatorList().call(),
+  // const [currentList, added, removed] = await Promise.all([
+  //   contract.methods.validatorList().call(),
+  //   contract.getPastEvents('ValidatorAdded', {
+  //     fromBlock
+  //   }),
+  //   contract.getPastEvents('ValidatorRemoved', {
+  //     fromBlock
+  //   })
+  // ])
+
+  const [added, removed] = await Promise.all([
     contract.getPastEvents('ValidatorAdded', {
       fromBlock
     }),
@@ -81,17 +95,17 @@ export const getValidatorList = async (contract: Contract, blockNumber: number, 
   )
 
   // Stored as a Set to avoid duplicates
-  const validatorList = new Set(currentList)
+  const validatorList = new Set()
 
   orderedEvents.forEach(e => {
     const { validator } = e.returnValues
-    if (e.event === 'ValidatorRemoved') {
+    if (e.event === 'ValidatorAdded') {
       validatorList.add(validator)
-    } else if (e.event === 'ValidatorAdded') {
+    } else if (e.event === 'ValidatorRemoved') {
       validatorList.delete(validator)
     }
   })
-
+  
   return Array.from(validatorList)
 }
 

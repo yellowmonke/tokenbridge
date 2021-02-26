@@ -1,7 +1,7 @@
 import React from 'react'
 import { TransactionReceipt } from 'web3-eth'
 import { useMessageConfirmations } from '../hooks/useMessageConfirmations'
-import { MessageObject } from '../utils/web3'
+import { NativeMessageObject , ArbitraryMessageObject } from '../utils/web3'
 import styled from 'styled-components'
 import { CONFIRMATIONS_STATUS } from '../config/constants'
 import { CONFIRMATIONS_STATUS_LABEL, CONFIRMATIONS_STATUS_LABEL_HOME } from '../config/descriptions'
@@ -36,7 +36,7 @@ const StatusDescription = styled.div`
 `
 
 export interface ConfirmationsContainerParams {
-  message: MessageObject
+  message: NativeMessageObject
   receipt: Maybe<TransactionReceipt>
   fromHome: boolean
   timestamp: number
@@ -58,6 +58,8 @@ export const ConfirmationsContainer = ({ message, receipt, fromHome, timestamp }
     validatorList,
     blockConfirmations
   })
+  
+  
 
   const statusLabel = fromHome ? CONFIRMATIONS_STATUS_LABEL_HOME : CONFIRMATIONS_STATUS_LABEL
 

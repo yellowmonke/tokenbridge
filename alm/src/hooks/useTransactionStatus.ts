@@ -3,7 +3,14 @@ import { TransactionReceipt } from 'web3-eth'
 import { HOME_RPC_POLLING_INTERVAL, TRANSACTION_STATUS } from '../config/constants'
 import { getTransactionStatusDescription } from '../utils/networks'
 import { useStateProvider } from '../state/StateProvider'
-import { getHomeMessagesFromReceipt, getForeignMessagesFromReceipt, MessageObject, getBlock } from '../utils/web3'
+import { 
+  getHomeMessagesFromReceipt,
+  getForeignMessagesFromReceipt, 
+  NativeMessageObject, 
+  ArbitraryMessageObject, 
+  getBlock 
+} from '../utils/web3'
+
 import useInterval from '@use-it/interval'
 
 export const useTransactionStatus = ({
@@ -16,7 +23,7 @@ export const useTransactionStatus = ({
   receiptParam: Maybe<TransactionReceipt>
 }) => {
   const { home, foreign } = useStateProvider()
-  const [messages, setMessages] = useState<Array<MessageObject>>([])
+  const [messages, setMessages] = useState<Array<NativeMessageObject>>([])
   const [status, setStatus] = useState('')
   const [description, setDescription] = useState('')
   const [receipt, setReceipt] = useState<Maybe<TransactionReceipt>>(null)
@@ -58,7 +65,7 @@ export const useTransactionStatus = ({
         if (!txReceipt) {
           setStatus(TRANSACTION_STATUS.NOT_FOUND)
           setDescription(getTransactionStatusDescription(TRANSACTION_STATUS.NOT_FOUND))
-          setMessages([{ id: txHash, data: '' }])
+          setMessages([{ recipient: '', value: '', txhash: txHash, _hash: '', _hashSansContract:'', contract:'' }])
           const timeoutId = setTimeout(() => getReceipt(), HOME_RPC_POLLING_INTERVAL)
           subscriptions.push(timeoutId)
         } else {
@@ -68,7 +75,7 @@ export const useTransactionStatus = ({
           setTimestamp(blockTimestamp)
 
           if (txReceipt.status) {
-            let bridgeMessages: Array<MessageObject>
+            let bridgeMessages: Array<NativeMessageObject>
             if (isHome) {
               bridgeMessages = getHomeMessagesFromReceipt(txReceipt, home.web3, home.bridgeAddress)
             } else {
@@ -76,7 +83,7 @@ export const useTransactionStatus = ({
             }
 
             if (bridgeMessages.length === 0) {
-              setMessages([{ id: txHash, data: '' }])
+              setMessages([{ recipient: '', value: '', txhash: txHash, _hash: '', _hashSansContract:'', contract:'' }])
               setStatus(TRANSACTION_STATUS.SUCCESS_NO_MESSAGES)
               setDescription(getTransactionStatusDescription(TRANSACTION_STATUS.SUCCESS_NO_MESSAGES, blockTimestamp))
             } else if (bridgeMessages.length === 1) {

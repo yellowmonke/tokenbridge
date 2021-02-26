@@ -3,10 +3,10 @@ import { Button } from './commons/Button'
 import { RadioButtonLabel, RadioButtonContainer } from './commons/RadioButton'
 import { useWindowWidth } from '@react-hook/window-size'
 import { formatTxHashExtended } from '../utils/networks'
-import { MessageObject } from '../utils/web3'
+import { NativeMessageObject , ArbitraryMessageObject } from '../utils/web3'
 
 export interface MessageSelectorParams {
-  messages: Array<MessageObject>
+  messages: Array<NativeMessageObject>
   onMessageSelected: (index: number) => void
 }
 
@@ -32,7 +32,7 @@ export const MessageSelector = ({ messages, onMessageSelected }: MessageSelector
               onChange={() => setMessageIndex(i)}
             />
             <RadioButtonLabel htmlFor={i.toString()}>
-              {windowWidth < 700 ? formatTxHashExtended(message.id) : message.id}
+              {windowWidth < 700 ? formatTxHashExtended(message._hash) : message._hash}
             </RadioButtonLabel>
           </RadioButtonContainer>
         ))}

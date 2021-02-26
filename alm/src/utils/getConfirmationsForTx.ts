@@ -7,6 +7,8 @@ import {
   APIPendingTransaction,
   GetPendingTransactionParams
 } from './explorer'
+import { TransactionReceipt } from "web3-eth"
+import { NativeMessageObject , ArbitraryMessageObject , encodeNativeMessageObject } from '../utils/web3'
 import {
   getValidatorConfirmation,
   getValidatorFailedTransaction,
@@ -16,7 +18,8 @@ import {
 import { ConfirmationParam } from '../hooks/useMessageConfirmations'
 
 export const getConfirmationsForTx = async (
-  messageData: string,
+  fromHome: boolean,
+  message: NativeMessageObject,
   web3: Maybe<Web3>,
   validatorList: string[],
   bridgeContract: Maybe<Contract>,
@@ -37,13 +40,13 @@ export const getConfirmationsForTx = async (
 
   // If all the information was not collected, then it should retry
   let shouldRetry = false
-  const hashMsg = web3.utils.soliditySha3Raw(messageData)
+
   let validatorConfirmations = await Promise.all(
-    validatorList.map(getValidatorConfirmation(web3, hashMsg, bridgeContract, confirmationContractMethod))
+    validatorList.map(getValidatorConfirmation(web3, fromHome? message._hash : message._hashSansContract , bridgeContract, confirmationContractMethod))
   )
 
   const successConfirmations = validatorConfirmations.filter(c => c.status === VALIDATOR_CONFIRMATION_STATUS.SUCCESS)
-
+  
   setResult((prevConfirmations: ConfirmationParam[]) => {
     if (prevConfirmations && prevConfirmations.length) {
       successConfirmations.forEach(validatorData => {
@@ -57,13 +60,13 @@ export const getConfirmationsForTx = async (
   })
 
   const notSuccessConfirmations = validatorConfirmations.filter(c => c.status !== VALIDATOR_CONFIRMATION_STATUS.SUCCESS)
-
   // If signatures not collected, look for pending transactions
   let pendingConfirmationsResult = false
+  
   if (successConfirmations.length !== requiredSignatures) {
     // Check if confirmation is pending
     const validatorPendingConfirmationsChecks = await Promise.all(
-      notSuccessConfirmations.map(getValidatorPendingTransaction(bridgeContract, messageData, getPendingTransactions))
+      notSuccessConfirmations.map(getValidatorPendingTransaction(bridgeContract, encodeNativeMessageObject(message , web3), getPendingTransactions))
     )
     const validatorPendingConfirmations = validatorPendingConfirmationsChecks.filter(
       c => c.status === VALIDATOR_CONFIRMATION_STATUS.PENDING
@@ -87,7 +90,7 @@ export const getConfirmationsForTx = async (
   let failedConfirmationsResult = false
   const validatorFailedConfirmationsChecks = await Promise.all(
     undefinedConfirmations.map(
-      getValidatorFailedTransaction(bridgeContract, messageData, timestamp, getFailedTransactions)
+      getValidatorFailedTransaction(bridgeContract, encodeNativeMessageObject(message , web3), timestamp, getFailedTransactions)
     )
   )
   const validatorFailedConfirmations = validatorFailedConfirmationsChecks.filter(
@@ -129,9 +132,8 @@ export const getConfirmationsForTx = async (
   const successConfirmationWithData = await Promise.all(
     validatorConfirmations
       .filter(c => c.status === VALIDATOR_CONFIRMATION_STATUS.SUCCESS)
-      .map(getValidatorSuccessTransaction(bridgeContract, messageData, timestamp, getSuccessTransactions))
+      .map(getValidatorSuccessTransaction(bridgeContract, encodeNativeMessageObject(message , web3), timestamp, getSuccessTransactions))
   )
-
   const successConfirmationWithTxFound = successConfirmationWithData.filter(v => v.txHash !== '')
 
   const updatedValidatorConfirmations = [...validatorConfirmations]
@@ -153,12 +155,12 @@ export const getConfirmationsForTx = async (
   if (successConfirmationWithTxFound.length < successConfirmationWithData.length) {
     shouldRetry = true
   }
-
   if (shouldRetry) {
     const timeoutId = setTimeout(
       () =>
         getConfirmationsForTx(
-          messageData,
+          fromHome,
+          message,
           web3,
           validatorList,
           bridgeContract,

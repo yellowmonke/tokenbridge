@@ -19,9 +19,16 @@ export const BLOCK_RANGE: number = 50
 export const ONE_DAY_TIMESTAMP: number = 86400
 export const THREE_DAYS_TIMESTAMP: number = 259200
 
-export const EXECUTE_AFFIRMATION_HASH = 'e7a2c01f'
+
+//AMB function hashes
+// export const EXECUTE_AFFIRMATION_HASH = 'e7a2c01f'
+// export const SUBMIT_SIGNATURE_HASH = '630cea8e'
+// export const EXECUTE_SIGNATURES_HASH = '3f7658fd'
+
+//Native-to-erc functions hashes
+export const EXECUTE_AFFIRMATION_HASH = '995b2cff'
 export const SUBMIT_SIGNATURE_HASH = '630cea8e'
-export const EXECUTE_SIGNATURES_HASH = '3f7658fd'
+export const EXECUTE_SIGNATURES_HASH = '232a2c1d'
 
 export const CACHE_KEY_SUCCESS = 'success-confirmation-validator-'
 export const CACHE_KEY_FAILED = 'failed-confirmation-validator-'

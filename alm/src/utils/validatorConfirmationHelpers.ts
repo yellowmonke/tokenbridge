@@ -33,7 +33,6 @@ export const getValidatorConfirmation = (
 
   const confirmed = await confirmationContractMethod(bridgeContract, hashSenderMsg)
   const status = confirmed ? VALIDATOR_CONFIRMATION_STATUS.SUCCESS : VALIDATOR_CONFIRMATION_STATUS.UNDEFINED
-
   // If validator confirmed signature, we cache the result to avoid doing future requests for a result that won't change
   if (confirmed) {
     validatorsCache.set(hashSenderMsg, confirmed)

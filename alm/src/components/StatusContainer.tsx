@@ -61,7 +61,7 @@ export const StatusContainer = ({ onBackToMain, setNetworkFromParams, receiptPar
 
   const displayMessageSelector = status === TRANSACTION_STATUS.SUCCESS_MULTIPLE_MESSAGES && selectedMessageId === -1
   const multiMessageSelected = status === TRANSACTION_STATUS.SUCCESS_MULTIPLE_MESSAGES && selectedMessageId !== -1
-  const displayReference = multiMessageSelected ? messages[selectedMessageId].id : txHash
+  const displayReference = multiMessageSelected ? messages[selectedMessageId]._hash : txHash
   const formattedMessageId = formatTxHash(displayReference)
 
   const isHome = chainId === home.chainId.toString()
@@ -69,8 +69,9 @@ export const StatusContainer = ({ onBackToMain, setNetworkFromParams, receiptPar
   const displayExplorerLink = status !== TRANSACTION_STATUS.NOT_FOUND
 
   const displayConfirmations = status === TRANSACTION_STATUS.SUCCESS_ONE_MESSAGE || multiMessageSelected
+  const emptyMessage = {recipient : '' , value : '' , txhash : '' , contract : '' , _hash : '' , _hashSansContract : '' }
   const messageToConfirm =
-    messages.length > 1 ? messages[selectedMessageId] : messages.length > 0 ? messages[0] : { id: '', data: '' }
+    messages.length > 1 ? messages[selectedMessageId] : messages.length > 0 ? messages[0] : emptyMessage
 
   let displayedDescription: string = multiMessageSelected
     ? getTransactionStatusDescription(TRANSACTION_STATUS.SUCCESS_ONE_MESSAGE, timestamp)

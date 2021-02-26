@@ -1,6 +1,6 @@
 import { useStateProvider } from '../state/StateProvider'
 import { TransactionReceipt } from 'web3-eth'
-import { MessageObject } from '../utils/web3'
+import { NativeMessageObject, ArbitraryMessageObject } from '../utils/web3'
 import { useEffect, useState } from 'react'
 import { EventData } from 'web3-eth-contract'
 import { getAffirmationsSigned, getMessagesSigned } from '../utils/contract'
@@ -26,7 +26,7 @@ import {
 } from '../utils/explorer'
 
 export interface useMessageConfirmationsParams {
-  message: MessageObject
+  message: NativeMessageObject
   receipt: Maybe<TransactionReceipt>
   fromHome: boolean
   timestamp: number
@@ -107,9 +107,9 @@ export const useMessageConfirmations = ({
       const interval = fromHome ? HOME_RPC_POLLING_INTERVAL : FOREIGN_RPC_POLLING_INTERVAL
       const web3 = fromHome ? home.web3 : foreign.web3
       blockProvider.start(web3)
+      
 
       const targetBlock = receipt.blockNumber + blockConfirmations
-
       checkSignaturesWaitingForBLocks(
         targetBlock,
         setWaitingBlocks,
@@ -135,7 +135,6 @@ export const useMessageConfirmations = ({
   useEffect(
     () => {
       if (!fromHome || !receipt || !home.web3 || !signatureCollected) return
-
       const subscriptions: Array<number> = []
 
       const unsubscribe = () => {
@@ -148,14 +147,14 @@ export const useMessageConfirmations = ({
 
       const fromBlock = receipt.blockNumber
       const toBlock = fromBlock + BLOCK_RANGE
-      const messageHash = home.web3.utils.soliditySha3Raw(message.data)
-
+      // const messageHash = home.web3.utils.soliditySha3Raw(message.data)
+      
       getCollectedSignaturesEvent(
         home.web3,
         home.bridgeContract,
         fromBlock,
         toBlock,
-        messageHash,
+        message,
         setCollectedSignaturesEvent,
         subscriptions
       )
@@ -165,7 +164,7 @@ export const useMessageConfirmations = ({
         homeBlockNumberProvider.stop()
       }
     },
-    [fromHome, home.bridgeContract, home.web3, message.data, receipt, signatureCollected]
+    [fromHome, home.bridgeContract, home.web3, message, receipt, signatureCollected]
   )
 
   // Check if the responsible validator is waiting for block confirmations to execute the message on foreign network
@@ -173,7 +172,7 @@ export const useMessageConfirmations = ({
   useEffect(
     () => {
       if (!fromHome || !home.web3 || !receipt || !collectedSignaturesEvent || !blockConfirmations) return
-
+      // console.log("use2")
       const subscriptions: Array<number> = []
 
       const unsubscribe = () => {
@@ -209,7 +208,6 @@ export const useMessageConfirmations = ({
   useEffect(
     () => {
       if (!waitingBlocksResolved || !timestamp || !requiredSignatures) return
-
       const subscriptions: Array<number> = []
 
       const unsubscribe = () => {
@@ -219,9 +217,10 @@ export const useMessageConfirmations = ({
       }
 
       const confirmationContractMethod = fromHome ? getMessagesSigned : getAffirmationsSigned
-
+      
       getConfirmationsForTx(
-        message.data,
+        fromHome,
+        message,
         home.web3,
         validatorList,
         home.bridgeContract,
@@ -244,8 +243,8 @@ export const useMessageConfirmations = ({
       }
     },
     [
-      fromHome,
-      message.data,
+      fromHome,//yes
+      message,
       home.web3,
       validatorList,
       home.bridgeContract,
@@ -261,7 +260,6 @@ export const useMessageConfirmations = ({
   useEffect(
     () => {
       if ((fromHome && !waitingBlocksForExecutionResolved) || (!fromHome && !waitingBlocksResolved)) return
-
       const subscriptions: Array<number> = []
 
       const unsubscribe = () => {
@@ -314,6 +312,7 @@ export const useMessageConfirmations = ({
   useEffect(
     () => {
       if (executionData.status === VALIDATOR_CONFIRMATION_STATUS.SUCCESS && existsConfirmation(confirmations)) {
+        
         const newStatus = executionData.executionResult
           ? CONFIRMATIONS_STATUS.SUCCESS
           : CONFIRMATIONS_STATUS.SUCCESS_MESSAGE_FAILED
@@ -347,6 +346,8 @@ export const useMessageConfirmations = ({
       } else {
         setStatus(CONFIRMATIONS_STATUS.UNDEFINED)
       }
+      //console.log('use5')
+      
     },
     [
       executionData,
