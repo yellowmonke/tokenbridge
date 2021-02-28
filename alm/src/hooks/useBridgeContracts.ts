@@ -3,7 +3,6 @@ import { HOME_AMB_ABI, FOREIGN_AMB_ABI } from '../abis'
 import { FOREIGN_BRIDGE_ADDRESS, HOME_BRIDGE_ADDRESS } from '../config/constants'
 import { Contract } from 'web3-eth-contract'
 import Web3 from 'web3'
-import { homedir } from 'os'
 
 export interface useBridgeContractsParams {
   homeNativeWeb3: Web3

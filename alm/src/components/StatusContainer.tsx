@@ -18,10 +18,10 @@ export interface StatusContainerParam {
 }
 
 export const StatusContainer = ({ onBackToMain, setNetworkFromParams, receiptParam }: StatusContainerParam) => {
-  const { homeNative, foreignNative, homeAMB, foreignAMB } = useStateProvider()
+  const { homeNative : home, foreignNative : foreign } = useStateProvider()
   const history = useHistory()
   const { chainId, txHash, messageIdParam } = useParams()
-  const validChainId = chainId === homeNative.chainId.toString() || chainId === foreignNative.chainId.toString()
+  const validChainId = chainId === home.chainId.toString() || chainId === foreign.chainId.toString()
   const validParameters = validChainId && validTxHash(txHash)
 
   const { messagesAMB, messagesNative, receipt, status, description, timestamp, loading } = useTransactionStatus({
@@ -44,7 +44,7 @@ export const StatusContainer = ({ onBackToMain, setNetworkFromParams, receiptPar
     [validChainId, chainId, setNetworkFromParams]
   )
 
-  if (!validParameters && homeNative.chainId && foreignNative.chainId) {
+  if (!validParameters && home.chainId && foreign.chainId) {
     return (
       <div>
         <p>
@@ -67,7 +67,7 @@ export const StatusContainer = ({ onBackToMain, setNetworkFromParams, receiptPar
   const displayReference = multiMessageSelected ? messages[selectedMessageId]._hash : txHash
   const formattedMessageId = formatTxHash(displayReference)
 
-  const isHome = chainId === homeNative.chainId.toString()
+  const isHome = chainId === home.chainId.toString()
   const txExplorerLink = getExplorerTxUrl(txHash, isHome)
   const displayExplorerLink = status !== TRANSACTION_STATUS.NOT_FOUND
 

@@ -51,7 +51,7 @@ export interface FormSubmitParams {
 
 export const MainPage = () => {
   const history = useHistory()
-  const { homeNative, foreignNative } = useStateProvider()
+  const { homeNative : home, foreignNative : foreign } = useStateProvider()
   const [networkName, setNetworkName] = useState('')
   const [receipt, setReceipt] = useState<Maybe<TransactionReceipt>>(null)
   const [showInfoAlert, setShowInfoAlert] = useState(false)
@@ -78,7 +78,7 @@ export const MainPage = () => {
   )
 
   const setNetworkData = (chainId: number) => {
-    const network = chainId === homeNative.chainId ? homeNative.name : foreignNative.name
+    const network = chainId === home.chainId ? home.name : foreign.name
 
     setNetworkName(network)
   }
