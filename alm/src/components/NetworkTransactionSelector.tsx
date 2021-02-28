@@ -4,10 +4,10 @@ import { RadioButtonLabel, RadioButtonContainer } from './commons/RadioButton'
 import { useStateProvider } from '../state/StateProvider'
 
 export const NetworkTransactionSelector = ({ onNetworkSelected }: { onNetworkSelected: (chainId: number) => void }) => {
-  const { home, foreign } = useStateProvider()
-  const [chainId, setChainId] = useState(home.chainId)
+  const { homeNative, foreignNative } = useStateProvider()
+  const [chainId, setChainId] = useState(homeNative.chainId)
 
-  const networks = [home, foreign]
+  const networks = [homeNative, foreignNative]
 
   const onSelect = () => {
     onNetworkSelected(chainId)

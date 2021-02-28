@@ -48,7 +48,8 @@ export const getValidatorSuccessTransaction = (
   bridgeContract: Contract,
   messageData: string,
   timestamp: number,
-  getSuccessTransactions: (args: GetFailedTransactionParams) => Promise<APITransaction[]>
+  getSuccessTransactions: (args: GetFailedTransactionParams) => Promise<APITransaction[]>,
+  _bridge: string
 ) => async (validatorData: BasicConfirmationParam): Promise<ConfirmationParam> => {
   const { validator } = validatorData
   const validatorCacheKey = `${CACHE_KEY_SUCCESS}${validatorData.validator}-${messageData}`
@@ -63,7 +64,8 @@ export const getValidatorSuccessTransaction = (
     to: bridgeContract.options.address,
     messageData,
     startTimestamp: timestamp,
-    endTimestamp: timestamp + ONE_DAY_TIMESTAMP
+    endTimestamp: timestamp + ONE_DAY_TIMESTAMP,
+    _bridge
   })
 
   let txHashTimestamp = 0
@@ -96,7 +98,8 @@ export const getValidatorFailedTransaction = (
   bridgeContract: Contract,
   messageData: string,
   timestamp: number,
-  getFailedTransactions: (args: GetFailedTransactionParams) => Promise<APITransaction[]>
+  getFailedTransactions: (args: GetFailedTransactionParams) => Promise<APITransaction[]>,
+  _bridge: string
 ) => async (validatorData: BasicConfirmationParam): Promise<ConfirmationParam> => {
   const validatorCacheKey = `${CACHE_KEY_FAILED}${validatorData.validator}-${messageData}`
   const failedFromCache = validatorsCache.getData(validatorCacheKey)
@@ -110,7 +113,8 @@ export const getValidatorFailedTransaction = (
     to: bridgeContract.options.address,
     messageData,
     startTimestamp: timestamp,
-    endTimestamp: timestamp + ONE_DAY_TIMESTAMP
+    endTimestamp: timestamp + ONE_DAY_TIMESTAMP,
+    _bridge
   })
   const newStatus =
     failedTransactions.length > 0 ? VALIDATOR_CONFIRMATION_STATUS.FAILED : VALIDATOR_CONFIRMATION_STATUS.UNDEFINED
@@ -142,12 +146,14 @@ export const getValidatorFailedTransaction = (
 export const getValidatorPendingTransaction = (
   bridgeContract: Contract,
   messageData: string,
-  getPendingTransactions: (args: GetPendingTransactionParams) => Promise<APIPendingTransaction[]>
+  getPendingTransactions: (args: GetPendingTransactionParams) => Promise<APIPendingTransaction[]>,
+  _bridge: string
 ) => async (validatorData: BasicConfirmationParam): Promise<ConfirmationParam> => {
   const failedTransactions = await getPendingTransactions({
     account: validatorData.validator,
     to: bridgeContract.options.address,
-    messageData
+    messageData,
+    _bridge
   })
 
   const newStatus =

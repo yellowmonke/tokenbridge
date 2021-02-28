@@ -65,5 +65,8 @@ export class SnapshotProvider {
   }
 }
 
-export const homeSnapshotProvider = new SnapshotProvider('home')
-export const foreignSnapshotProvider = new SnapshotProvider('foreign')
+export const homeAMBSnapshotProvider = new SnapshotProvider('homeAMB')
+export const foreignAMBSnapshotProvider = new SnapshotProvider('foreignAMB')
+
+export const homeNativeSnapshotProvider = new SnapshotProvider('homeNATIVE')
+export const foreignNativeSnapshotProvider = new SnapshotProvider('foreignNATIVE')

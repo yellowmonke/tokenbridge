@@ -1,5 +1,6 @@
-const { BRIDGE_VALIDATORS_ABI, HOME_AMB_ABI } = require('commons')
+const { BRIDGE_VALIDATORS_ABI, HOME_AMB_ABI , HOME_NATIVE_TO_ERC_ABI } = require('commons')
 
+// import { BRIDGE_VALIDATORS_ABI, HOME_AMB_ABI } from '../src/abis'
 const path = require('path')
 require('dotenv').config()
 const Web3 = require('web3')
@@ -8,13 +9,15 @@ const fs = require('fs')
 
 const {
   COMMON_HOME_RPC_URL,
-  COMMON_HOME_BRIDGE_ADDRESS,
+  NATIVE_HOME_BRIDGE_ADDRESS,
+  ARBITRARY_MESSAGE_HOME_BRIDGE_ADDRESS,
   COMMON_FOREIGN_RPC_URL,
-  COMMON_FOREIGN_BRIDGE_ADDRESS
+  NATIVE_FOREIGN_BRIDGE_ADDRESS,
+  ARBITRARY_MESSAGE_FOREIGN_BRIDGE_ADDRESS
 } = process.env
 
-const generateSnapshot = async (side, url, bridgeAddress) => {
-  const snapshotPath = `../src/snapshots/${side}.json`
+const generateSnapshot = async (side, url, bridgeAddress, bridge) => {
+  const snapshotPath = `../src/snapshots/${side+bridge}.json`
   const snapshotFullPath = path.join(__dirname, snapshotPath)
   const snapshot = {}
 
@@ -25,8 +28,8 @@ const generateSnapshot = async (side, url, bridgeAddress) => {
 
   // Save chainId
   snapshot.chainId = await web3.eth.getChainId()
-
-  const bridgeContract = new web3.eth.Contract(HOME_AMB_ABI, bridgeAddress)
+  console.log(bridgeAddress)
+  const bridgeContract = new web3.eth.Contract((bridge == "NATIVE" ? HOME_NATIVE_TO_ERC_ABI : HOME_AMB_ABI), bridgeAddress)
 
   // Save RequiredBlockConfirmationChanged events
   let requiredBlockConfirmationChangedEvents = await bridgeContract.getPastEvents('RequiredBlockConfirmationChanged', {
@@ -104,8 +107,10 @@ const generateSnapshot = async (side, url, bridgeAddress) => {
 
 const main = async () => {
   await Promise.all([
-    generateSnapshot('home', COMMON_HOME_RPC_URL, COMMON_HOME_BRIDGE_ADDRESS),
-    generateSnapshot('foreign', COMMON_FOREIGN_RPC_URL, COMMON_FOREIGN_BRIDGE_ADDRESS)
+    generateSnapshot('home', COMMON_HOME_RPC_URL, NATIVE_HOME_BRIDGE_ADDRESS , 'NATIVE'),
+    generateSnapshot('foreign', COMMON_FOREIGN_RPC_URL, NATIVE_FOREIGN_BRIDGE_ADDRESS , 'NATIVE'),
+    generateSnapshot('home', COMMON_HOME_RPC_URL, ARBITRARY_MESSAGE_HOME_BRIDGE_ADDRESS , 'AMB'),
+    generateSnapshot('foreign', COMMON_FOREIGN_RPC_URL, ARBITRARY_MESSAGE_FOREIGN_BRIDGE_ADDRESS , 'AMB')
   ])
 }
 

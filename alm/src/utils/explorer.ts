@@ -39,12 +39,14 @@ export interface GetFailedTransactionParams {
   messageData: string
   startTimestamp: number
   endTimestamp: number
+  _bridge: string
 }
 
 export interface GetPendingTransactionParams {
   account: string
   to: string
   messageData: string
+  _bridge: string
 }
 
 export const fetchAccountTransactionsFromBlockscout = async ({
@@ -169,14 +171,25 @@ export const getSuccessTransactions = async (
 
 export const filterValidatorSignatureTransaction = (
   transactions: APITransaction[],
-  messageData: string
+  messageData: string,
+  _bridge: string
 ): APITransaction[] => {
-  const messageDataValue = messageData.replace('0x', '')
-  return transactions.filter(
-    t =>
-      ((t.input.includes(SUBMIT_SIGNATURE_HASH) && t.input.includes(messageDataValue)) || 
-      (t.input.includes(EXECUTE_AFFIRMATION_HASH) && t.input.includes(messageDataValue.substr(0, 40 + 64 + 64))))
-  )
+  if (_bridge === 'NATIVE') {
+    const messageDataValue = messageData.replace('0x', '').toLowerCase()
+    return transactions.filter(
+      t =>
+        (t.input.includes(SUBMIT_SIGNATURE_HASH[_bridge]) && t.input.includes(messageDataValue)) ||
+        (t.input.includes(EXECUTE_AFFIRMATION_HASH[_bridge]) &&
+          t.input.includes(messageDataValue.substr(0, 40 + 64 + 64)))
+    )
+  } else {
+    const messageDataValue = messageData.replace('0x', '').toLowerCase()
+    return transactions.filter(
+      t =>
+        (t.input.includes(SUBMIT_SIGNATURE_HASH[_bridge]) || t.input.includes(EXECUTE_AFFIRMATION_HASH[_bridge])) &&
+        t.input.includes(messageDataValue)
+    )
+  }
 }
 
 export const getValidatorFailedTransactionsForMessage = async ({
@@ -184,7 +197,8 @@ export const getValidatorFailedTransactionsForMessage = async ({
   to,
   messageData,
   startTimestamp,
-  endTimestamp
+  endTimestamp,
+  _bridge
 }: GetFailedTransactionParams): Promise<APITransaction[]> => {
   const failedTransactions = await getFailedTransactions(
     account,
@@ -194,7 +208,7 @@ export const getValidatorFailedTransactionsForMessage = async ({
     HOME_EXPLORER_API,
     fetchAccountTransactionsFromBlockscout
   )
-  return filterValidatorSignatureTransaction(failedTransactions, messageData)
+  return filterValidatorSignatureTransaction(failedTransactions, messageData, _bridge)
 }
 
 export const getValidatorSuccessTransactionsForMessage = async ({
@@ -202,7 +216,8 @@ export const getValidatorSuccessTransactionsForMessage = async ({
   to,
   messageData,
   startTimestamp,
-  endTimestamp
+  endTimestamp,
+  _bridge
 }: GetFailedTransactionParams): Promise<APITransaction[]> => {
   const transactions = await getSuccessTransactions(
     account,
@@ -212,11 +227,11 @@ export const getValidatorSuccessTransactionsForMessage = async ({
     HOME_EXPLORER_API,
     fetchAccountTransactionsFromBlockscout
   )
-  return filterValidatorSignatureTransaction(transactions, messageData)
+  return filterValidatorSignatureTransaction(transactions, messageData, _bridge)
 }
 
 export const getExecutionFailedTransactionForMessage = async (
-  { account, to, messageData, startTimestamp, endTimestamp }: GetFailedTransactionParams,
+  { account, to, messageData, startTimestamp, endTimestamp, _bridge }: GetFailedTransactionParams,
   getFailedTransactionsMethod = getFailedTransactions
 ): Promise<APITransaction[]> => {
   const failedTransactions = await getFailedTransactionsMethod(
@@ -229,11 +244,13 @@ export const getExecutionFailedTransactionForMessage = async (
   )
 
   const messageDataValue = messageData.replace('0x', '')
-  return failedTransactions.filter(t => t.input.includes(EXECUTE_SIGNATURES_HASH) && t.input.includes(messageDataValue))
+  return failedTransactions.filter(
+    t => t.input.includes(EXECUTE_SIGNATURES_HASH[_bridge]) && t.input.includes(messageDataValue)
+  )
 }
 
 export const getValidatorPendingTransactionsForMessage = async (
-  { account, to, messageData }: GetPendingTransactionParams,
+  { account, to, messageData, _bridge }: GetPendingTransactionParams,
   fetchPendingTransactionsMethod = fetchPendingTransactions
 ): Promise<APIPendingTransaction[]> => {
   const pendingTransactions = await fetchPendingTransactionsMethod({
@@ -244,16 +261,26 @@ export const getValidatorPendingTransactionsForMessage = async (
   const toAddressLowerCase = to.toLowerCase()
   const messageDataValue = messageData.replace('0x', '')
 
-  return pendingTransactions.filter(
-    t =>
-      t.to.toLowerCase() === toAddressLowerCase &&
-      ((t.input.includes(SUBMIT_SIGNATURE_HASH) && t.input.includes(messageDataValue)) || 
-      (t.input.includes(EXECUTE_AFFIRMATION_HASH) && t.input.includes(messageDataValue.substr(0, 40 + 64 + 64)))) // recipient:20 bytes , value:32 bytes(uint256) , txhash:32 bytes
-  )
+  if (_bridge === 'NATIVE') {
+    return pendingTransactions.filter(
+      t =>
+        t.to.toLowerCase() === toAddressLowerCase &&
+        ((t.input.includes(SUBMIT_SIGNATURE_HASH[_bridge]) && t.input.includes(messageDataValue)) ||
+          (t.input.includes(EXECUTE_AFFIRMATION_HASH[_bridge]) &&
+            t.input.includes(messageDataValue.substr(0, 40 + 64 + 64)))) // recipient:20 bytes , value:32 bytes(uint256) , txhash:32 bytes
+    )
+  } else {
+    return pendingTransactions.filter(
+      t =>
+        t.to.toLowerCase() === toAddressLowerCase &&
+        (t.input.includes(SUBMIT_SIGNATURE_HASH[_bridge]) || t.input.includes(EXECUTE_AFFIRMATION_HASH[_bridge])) &&
+        t.input.includes(messageDataValue)
+    )
+  }
 }
 
 export const getExecutionPendingTransactionsForMessage = async (
-  { account, to, messageData }: GetPendingTransactionParams,
+  { account, to, messageData, _bridge }: GetPendingTransactionParams,
   fetchPendingTransactionsMethod = fetchPendingTransactions
 ): Promise<APIPendingTransaction[]> => {
   const pendingTransactions = await fetchPendingTransactionsMethod({
@@ -267,7 +294,7 @@ export const getExecutionPendingTransactionsForMessage = async (
   return pendingTransactions.filter(
     t =>
       t.to.toLowerCase() === toAddressLowerCase &&
-      t.input.includes(EXECUTE_SIGNATURES_HASH) &&
+      t.input.includes(EXECUTE_SIGNATURES_HASH[_bridge]) &&
       t.input.includes(messageDataValue)
   )
 }

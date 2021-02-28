@@ -11,7 +11,12 @@ import {
 import Web3 from 'web3'
 import { useBridgeContracts } from '../hooks/useBridgeContracts'
 import { Contract } from 'web3-eth-contract'
-import { foreignSnapshotProvider, homeSnapshotProvider } from '../services/SnapshotProvider'
+import {
+  foreignNativeSnapshotProvider,
+  homeNativeSnapshotProvider,
+  foreignAMBSnapshotProvider,
+  homeAMBSnapshotProvider
+} from '../services/SnapshotProvider'
 
 export interface BaseNetworkParams {
   chainId: number
@@ -22,24 +27,40 @@ export interface BaseNetworkParams {
 }
 
 export interface StateContext {
-  home: BaseNetworkParams
-  foreign: BaseNetworkParams
+  homeNative: BaseNetworkParams
+  foreignNative: BaseNetworkParams
+  homeAMB: BaseNetworkParams
+  foreignAMB: BaseNetworkParams
   loading: boolean
 }
 
 const initialState = {
-  home: {
+  homeNative: {
     chainId: 0,
     name: '',
     web3: null,
-    bridgeAddress: HOME_BRIDGE_ADDRESS,
+    bridgeAddress: HOME_BRIDGE_ADDRESS['NATIVE'],
     bridgeContract: null
   },
-  foreign: {
+  foreignNative: {
     chainId: 0,
     name: '',
     web3: null,
-    bridgeAddress: FOREIGN_BRIDGE_ADDRESS,
+    bridgeAddress: FOREIGN_BRIDGE_ADDRESS['NATIVE'],
+    bridgeContract: null
+  },
+  homeAMB: {
+    chainId: 0,
+    name: '',
+    web3: null,
+    bridgeAddress: HOME_BRIDGE_ADDRESS['AMB'],
+    bridgeContract: null
+  },
+  foreignAMB: {
+    chainId: 0,
+    name: '',
+    web3: null,
+    bridgeAddress: FOREIGN_BRIDGE_ADDRESS['AMB'],
     bridgeContract: null
   },
   loading: true
@@ -48,27 +69,44 @@ const initialState = {
 const StateContext = createContext<StateContext>(initialState)
 
 export const StateProvider = ({ children }: { children: ReactNode }) => {
-  const homeNetwork = useNetwork(HOME_RPC_URL, homeSnapshotProvider)
-  const foreignNetwork = useNetwork(FOREIGN_RPC_URL, foreignSnapshotProvider)
-  const { homeBridge, foreignBridge } = useBridgeContracts({
-    homeWeb3: homeNetwork.web3,
-    foreignWeb3: foreignNetwork.web3
+  const homeNativeNetwork = useNetwork(HOME_RPC_URL, homeNativeSnapshotProvider)
+  const foreignNativeNetwork = useNetwork(FOREIGN_RPC_URL, foreignNativeSnapshotProvider)
+  const homeAMBNetwork = useNetwork(HOME_RPC_URL, homeAMBSnapshotProvider)
+  const foreignAMBNetwork = useNetwork(FOREIGN_RPC_URL, foreignAMBSnapshotProvider)
+  const { homeNativeBridge, foreignNativeBridge, homeAMBBridge, foreignAMBBridge } = useBridgeContracts({
+    homeNativeWeb3: homeNativeNetwork.web3,
+    foreignNativeWeb3: foreignNativeNetwork.web3,
+    homeAMBWeb3: homeAMBNetwork.web3,
+    foreignAMBWeb3: foreignAMBNetwork.web3
   })
 
   const value = {
-    home: {
-      bridgeAddress: HOME_BRIDGE_ADDRESS,
+    homeNative: {
+      bridgeAddress: HOME_BRIDGE_ADDRESS['NATIVE'],
       name: HOME_NETWORK_NAME,
-      bridgeContract: homeBridge,
-      ...homeNetwork
+      bridgeContract: homeNativeBridge,
+      ...homeNativeNetwork
     },
-    foreign: {
-      bridgeAddress: FOREIGN_BRIDGE_ADDRESS,
+    foreignNative: {
+      bridgeAddress: FOREIGN_BRIDGE_ADDRESS['NATIVE'],
       name: FOREIGN_NETWORK_NAME,
-      bridgeContract: foreignBridge,
-      ...foreignNetwork
+      bridgeContract: foreignNativeBridge,
+      ...foreignNativeNetwork
     },
-    loading: homeNetwork.loading || foreignNetwork.loading
+    homeAMB: {
+      bridgeAddress: HOME_BRIDGE_ADDRESS['AMB'],
+      name: HOME_NETWORK_NAME,
+      bridgeContract: homeAMBBridge,
+      ...homeNativeNetwork
+    },
+    foreignAMB: {
+      bridgeAddress: FOREIGN_BRIDGE_ADDRESS['AMB'],
+      name: FOREIGN_NETWORK_NAME,
+      bridgeContract: foreignAMBBridge,
+      ...foreignNativeNetwork
+    },
+    loading:
+      homeAMBNetwork.loading || foreignAMBNetwork.loading || homeNativeNetwork.loading || foreignNativeNetwork.loading
   }
 
   return <StateContext.Provider value={value}>{children}</StateContext.Provider>

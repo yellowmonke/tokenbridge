@@ -63,12 +63,10 @@ export const getRequiredSignatures = async (
 export const getValidatorList = async (contract: Contract, blockNumber: number, snapshotProvider: SnapshotProvider) => {
   const addedEventsFromSnapshot = snapshotProvider.validatorAddedEvents(blockNumber)
   const removedEventsFromSnapshot = snapshotProvider.validatorRemovedEvents(blockNumber)
-  const snapshotBlockNumber = snapshotProvider.snapshotBlockNumber()
-  
+  // const snapshotBlockNumber = snapshotProvider.snapshotBlockNumber()
+
   // const fromBlock = snapshotBlockNumber > blockNumber ? snapshotBlockNumber + 1 : blockNumber
-  const fromBlock = 0;
-  // const x = await contract.methods.validatorList().call()
-  // console.log(x);
+  const fromBlock = 0
 
   // const [currentList, added, removed] = await Promise.all([
   //   contract.methods.validatorList().call(),
@@ -79,6 +77,8 @@ export const getValidatorList = async (contract: Contract, blockNumber: number, 
   //     fromBlock
   //   })
   // ])
+
+  // Native bridge does not have a validatorList method so we have to look through all ValidatorAdded and ValidatorRemoved events from block 0
 
   const [added, removed] = await Promise.all([
     contract.getPastEvents('ValidatorAdded', {
@@ -105,7 +105,7 @@ export const getValidatorList = async (contract: Contract, blockNumber: number, 
       validatorList.delete(validator)
     }
   })
-  
+
   return Array.from(validatorList)
 }
 

@@ -8,16 +8,17 @@ import {
   GetFailedTransactionParams,
   GetPendingTransactionParams
 } from './explorer'
-import { getBlock, NativeMessageObject, ArbitraryMessageObject, encodeNativeMessageObject } from './web3'
+import { getBlock, MessageObject, encodeMessageObject } from './web3'
 import validatorsCache from '../services/ValidatorsCache'
 
 export const getFinalizationEvent = async (
+  _bridge: string,
   contract: Maybe<Contract>,
   eventName: string,
   web3: Maybe<Web3>,
   setResult: React.Dispatch<React.SetStateAction<ExecutionData>>,
   waitingBlocksResolved: boolean,
-  message: NativeMessageObject,
+  message: MessageObject,
   interval: number,
   subscriptions: number[],
   timestamp: number,
@@ -30,20 +31,32 @@ export const getFinalizationEvent = async (
   if (!contract || !web3 || !waitingBlocksResolved) return
   // Since it filters by the message id, only one event will be fetched
   // so there is no need to limit the range of the block to reduce the network traffic
-  const eevents: EventData[] = await contract.getPastEvents(eventName, {
-    fromBlock: 0,
-    toBlock: 'latest',
-    filter: {
-      recipient : message.recipient,
-      value : message.value,
-      transactionHash: message.txhash
-    }
-  })
-  const events = eevents.filter((e:EventData) => 
-    e.returnValues.recipient == message.recipient &&
-    e.returnValues.value == message.value &&
-    e.returnValues.transactionHash == message.txhash  
-  )
+  let events : EventData[];
+
+  if(_bridge === "NATIVE"){
+    const eevents: EventData[] = await contract.getPastEvents(eventName, {
+      fromBlock: 0,
+      toBlock: 'latest',
+      filter: {
+        recipient : message.recipient,
+        value : message.value,
+        transactionHash: message.txhash
+      }
+    })
+    events = eevents.filter((e:EventData) => 
+      e.returnValues.recipient == message.recipient &&
+      e.returnValues.value == message.value &&
+      e.returnValues.transactionHash == message.txhash  
+    )
+  } else {
+    events = await contract.getPastEvents(eventName, {
+      fromBlock: 0,
+      toBlock: 'latest',
+      filter: {
+        messageId: message.id
+      }
+    })
+  }
   
   if (events.length > 0) {
     const event = events[0]
@@ -60,7 +73,7 @@ export const getFinalizationEvent = async (
       validator: validatorAddress,
       txHash: event.transactionHash,
       timestamp: blockTimestamp,
-      executionResult: true //event.returnValues.status CHECK
+      executionResult: _bridge === "NATIVE" ? true : event.returnValues.status //CHECK
     })
   } else {
     // If event is defined, it means it is a message from Home to Foreign
@@ -69,8 +82,9 @@ export const getFinalizationEvent = async (
 
       const pendingTransactions = await getPendingExecution({
         account: validator,
-        messageData: encodeNativeMessageObject(message , web3),
-        to: contract.options.address
+        messageData: encodeMessageObject(message , web3),
+        to: contract.options.address,
+        _bridge: _bridge
       })
 
       // If the transaction is pending it sets the status and avoid making the request for failed transactions
@@ -95,9 +109,10 @@ export const getFinalizationEvent = async (
           const failedTransactions = await getFailedExecution({
             account: validator,
             to: contract.options.address,
-            messageData: encodeNativeMessageObject(message , web3),
+            messageData: encodeMessageObject(message , web3),
             startTimestamp: timestamp,
-            endTimestamp: timestamp + THREE_DAYS_TIMESTAMP
+            endTimestamp: timestamp + THREE_DAYS_TIMESTAMP,
+            _bridge : _bridge
           })
 
           if (failedTransactions.length > 0) {
@@ -123,6 +138,7 @@ export const getFinalizationEvent = async (
     const timeoutId = setTimeout(
       () =>
         getFinalizationEvent(
+          _bridge,
           contract,
           eventName,
           web3,

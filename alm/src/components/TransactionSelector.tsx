@@ -23,7 +23,7 @@ export const TransactionSelector = ({
   onSelected: (chainId: number, receipt: TransactionReceipt) => void
   onBack: () => void
 }) => {
-  const { home, foreign } = useStateProvider()
+  const { homeNative: home, foreignNative: foreign } = useStateProvider()
   const { receipt: homeReceipt, status: homeStatus } = useTransactionFinder({ txHash, web3: home.web3 })
   const { receipt: foreignReceipt, status: foreignStatus } = useTransactionFinder({ txHash, web3: foreign.web3 })
 

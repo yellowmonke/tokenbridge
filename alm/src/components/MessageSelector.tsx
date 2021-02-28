@@ -3,10 +3,10 @@ import { Button } from './commons/Button'
 import { RadioButtonLabel, RadioButtonContainer } from './commons/RadioButton'
 import { useWindowWidth } from '@react-hook/window-size'
 import { formatTxHashExtended } from '../utils/networks'
-import { NativeMessageObject , ArbitraryMessageObject } from '../utils/web3'
+import { MessageObject } from '../utils/web3'
 
 export interface MessageSelectorParams {
-  messages: Array<NativeMessageObject>
+  messages: Array<MessageObject>
   onMessageSelected: (index: number) => void
 }
 

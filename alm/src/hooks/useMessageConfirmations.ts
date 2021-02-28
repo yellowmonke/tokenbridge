@@ -1,6 +1,6 @@
 import { useStateProvider } from '../state/StateProvider'
 import { TransactionReceipt } from 'web3-eth'
-import { NativeMessageObject, ArbitraryMessageObject } from '../utils/web3'
+import { MessageObject } from '../utils/web3'
 import { useEffect, useState } from 'react'
 import { EventData } from 'web3-eth-contract'
 import { getAffirmationsSigned, getMessagesSigned } from '../utils/contract'
@@ -26,13 +26,14 @@ import {
 } from '../utils/explorer'
 
 export interface useMessageConfirmationsParams {
-  message: NativeMessageObject
+  message: MessageObject
   receipt: Maybe<TransactionReceipt>
   fromHome: boolean
   timestamp: number
   requiredSignatures: number
   validatorList: string[]
   blockConfirmations: number
+  _bridge: string
 }
 
 export interface BasicConfirmationParam {
@@ -60,9 +61,13 @@ export const useMessageConfirmations = ({
   timestamp,
   requiredSignatures,
   validatorList,
-  blockConfirmations
+  blockConfirmations,
+  _bridge
 }: useMessageConfirmationsParams) => {
-  const { home, foreign } = useStateProvider()
+  const { homeNative, foreignNative, homeAMB, foreignAMB } = useStateProvider()
+  const home = _bridge === 'NATIVE' ? homeNative : homeAMB
+  const foreign = _bridge === 'NATIVE' ? foreignNative : foreignAMB
+
   const [confirmations, setConfirmations] = useState<Array<ConfirmationParam>>([])
   const [status, setStatus] = useState(CONFIRMATIONS_STATUS.UNDEFINED)
   const [waitingBlocks, setWaitingBlocks] = useState(false)
@@ -107,7 +112,6 @@ export const useMessageConfirmations = ({
       const interval = fromHome ? HOME_RPC_POLLING_INTERVAL : FOREIGN_RPC_POLLING_INTERVAL
       const web3 = fromHome ? home.web3 : foreign.web3
       blockProvider.start(web3)
-      
 
       const targetBlock = receipt.blockNumber + blockConfirmations
       checkSignaturesWaitingForBLocks(
@@ -148,7 +152,7 @@ export const useMessageConfirmations = ({
       const fromBlock = receipt.blockNumber
       const toBlock = fromBlock + BLOCK_RANGE
       // const messageHash = home.web3.utils.soliditySha3Raw(message.data)
-      
+
       getCollectedSignaturesEvent(
         home.web3,
         home.bridgeContract,
@@ -172,7 +176,6 @@ export const useMessageConfirmations = ({
   useEffect(
     () => {
       if (!fromHome || !home.web3 || !receipt || !collectedSignaturesEvent || !blockConfirmations) return
-      // console.log("use2")
       const subscriptions: Array<number> = []
 
       const unsubscribe = () => {
@@ -217,8 +220,9 @@ export const useMessageConfirmations = ({
       }
 
       const confirmationContractMethod = fromHome ? getMessagesSigned : getAffirmationsSigned
-      
+
       getConfirmationsForTx(
+        _bridge,
         fromHome,
         message,
         home.web3,
@@ -243,7 +247,7 @@ export const useMessageConfirmations = ({
       }
     },
     [
-      fromHome,//yes
+      fromHome, //yes
       message,
       home.web3,
       validatorList,
@@ -274,6 +278,7 @@ export const useMessageConfirmations = ({
       const interval = fromHome ? FOREIGN_RPC_POLLING_INTERVAL : HOME_RPC_POLLING_INTERVAL
 
       getFinalizationEvent(
+        _bridge,
         bridgeContract,
         contractEvent,
         providedWeb3,
@@ -312,7 +317,6 @@ export const useMessageConfirmations = ({
   useEffect(
     () => {
       if (executionData.status === VALIDATOR_CONFIRMATION_STATUS.SUCCESS && existsConfirmation(confirmations)) {
-        
         const newStatus = executionData.executionResult
           ? CONFIRMATIONS_STATUS.SUCCESS
           : CONFIRMATIONS_STATUS.SUCCESS_MESSAGE_FAILED
@@ -346,8 +350,6 @@ export const useMessageConfirmations = ({
       } else {
         setStatus(CONFIRMATIONS_STATUS.UNDEFINED)
       }
-      //console.log('use5')
-      
     },
     [
       executionData,

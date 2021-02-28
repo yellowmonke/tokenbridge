@@ -8,25 +8,38 @@ import { HOME_AMB_ABI, FOREIGN_AMB_ABI } from '../abis'
 import { SnapshotProvider } from '../services/SnapshotProvider'
 import { FOREIGN_BRIDGE_ADDRESS } from '../config/constants'
 
-export interface ArbitraryMessageObject {
-  id: string
-  data: string
-}
+// export interface ArbitraryMessageObject {
+//   id: string
+//   data: string
+// }
 
-export interface NativeMessageObject {
+// export interface NativeMessageObject {
+//   recipient : string
+//   value : string
+//   txhash : string
+//   contract : string
+//   _hash : string
+//   _hashSansContract : string
+// }
+
+export interface MessageObject{
   recipient : string
   value : string
   txhash : string
   contract : string
   _hash : string
   _hashSansContract : string
-  
+  id: string
+  data: string
 }
 
-export const encodeNativeMessageObject = (
-  message : NativeMessageObject,
+export const encodeMessageObject = (
+  message : MessageObject,
   web3: Web3
 ) : string => {
+  if(typeof message.data !== "undefined" && message.data.length !== 0){
+    return message.data
+  }
   let s = '';
   const recipient = message.recipient.replace('0x' , '').toLowerCase()
   const value = web3.eth.abi.encodeParameter('uint256' , message.value).replace('0x' , '').toLowerCase()
@@ -45,12 +58,13 @@ export const getWeb3 = (url: string) => memoized(url)
 
 
 
-export const filterEventsByAbi = (
+export const filterEventsByAbiNative = (
   txReceipt: TransactionReceipt,
   web3: Web3,
   bridgeAddress: string,
+  _bridge: string,
   eventAbi: AbiItem
-): NativeMessageObject[] => {
+): MessageObject[] => {
   const eventHash = web3.eth.abi.encodeEventSignature(eventAbi)
   const events = txReceipt.logs.filter(e => e.address === bridgeAddress && e.topics[0] === eventHash)
 
@@ -62,56 +76,86 @@ export const filterEventsByAbi = (
     if (eventAbi && eventAbi.inputs && eventAbi.inputs.length) {
       decodedLogs = web3.eth.abi.decodeLog(eventAbi.inputs, e.data, [e.topics[0]])
     }
-
-    return { 
+    const tmp : MessageObject = {
       recipient: decodedLogs.recipient, 
       value: decodedLogs.value, 
       txhash: txReceipt.transactionHash, 
-      contract : FOREIGN_BRIDGE_ADDRESS,
-      _hash : web3.utils.soliditySha3Raw(decodedLogs.recipient , decodedLogs.value , txReceipt.transactionHash , FOREIGN_BRIDGE_ADDRESS),
+      contract : FOREIGN_BRIDGE_ADDRESS[_bridge],
+      _hash : web3.utils.soliditySha3Raw(decodedLogs.recipient , decodedLogs.value , txReceipt.transactionHash , FOREIGN_BRIDGE_ADDRESS[_bridge]),
       _hashSansContract : web3.utils.soliditySha3Raw(decodedLogs.recipient , decodedLogs.value , txReceipt.transactionHash),
-
+      id: '',
+      data: ''
     }
+    tmp.data = encodeMessageObject(tmp, web3)
+    return tmp
   })
 }
 
+
 //AMB filter
-// export const filterEventsByAbi = (
-//   txReceipt: TransactionReceipt,
-//   web3: Web3,
-//   bridgeAddress: string,
-//   eventAbi: AbiItem
-// ): MessageObject[] => {
-//   const eventHash = web3.eth.abi.encodeEventSignature(eventAbi)
-//   const events = txReceipt.logs.filter(e => e.address === bridgeAddress && e.topics[0] === eventHash)
+export const filterEventsByAbiAMB = (
+  txReceipt: TransactionReceipt,
+  web3: Web3,
+  bridgeAddress: string,
+  _bridge: string,
+  eventAbi: AbiItem
+): MessageObject[] => {
+  const eventHash = web3.eth.abi.encodeEventSignature(eventAbi)
+  const events = txReceipt.logs.filter(e => e.address === bridgeAddress && e.topics[0] === eventHash)
 
-//   return events.map(e => {
-//     let decodedLogs: { [p: string]: string } = {
-//       messageId: '',
-//       encodedData: ''
-//     }
-//     if (eventAbi && eventAbi.inputs && eventAbi.inputs.length) {
-//       decodedLogs = web3.eth.abi.decodeLog(eventAbi.inputs, e.data, [e.topics[1]])
-//     }
-//     console.log(decodedLogs.recipient , decodedLogs.value);
-    
-//     return { id: decodedLogs.recipient, data: decodedLogs.value }
-//   })
-// }
+  return events.map(e => {
+    let decodedLogs: { [p: string]: string } = {
+      messageId: '',
+      encodedData: ''
+    }
+    if (eventAbi && eventAbi.inputs && eventAbi.inputs.length) {
+      decodedLogs = web3.eth.abi.decodeLog(eventAbi.inputs, e.data, [e.topics[1]])
+    }
+    const tmp : MessageObject = {
+      recipient: '', 
+      value: '', 
+      txhash: txReceipt.transactionHash, 
+      contract : '',
+      _hash : web3.utils.soliditySha3Raw(decodedLogs.encodedData),
+      _hashSansContract : '',
+      id: decodedLogs.messageId,
+      data: decodedLogs.encodedData
+    }
+    return tmp
+  })
+}
 
-export const getHomeMessagesFromReceipt = (txReceipt: TransactionReceipt, web3: Web3, bridgeAddress: string) => {
-  const UserRequestForSignatureAbi: AbiItem = HOME_AMB_ABI.filter(
+export const getHomeMessagesFromReceipt = (txReceipt: TransactionReceipt, web3: Web3, bridgeAddress: string, _bridge: string) => {
+  const UserRequestForSignatureAbi: AbiItem = HOME_AMB_ABI[_bridge].filter(
     (e: AbiItem) => e.type === 'event' && e.name === 'UserRequestForSignature'
   )[0]
-  return filterEventsByAbi(txReceipt, web3, bridgeAddress, UserRequestForSignatureAbi)
+  if(_bridge === "NATIVE")
+    return filterEventsByAbiNative(txReceipt, web3, bridgeAddress, _bridge, UserRequestForSignatureAbi)
+  else
+    return filterEventsByAbiAMB(txReceipt, web3, bridgeAddress, _bridge, UserRequestForSignatureAbi)  
 }
+// export const getAMBHomeMessagesFromReceipt = (txReceipt: TransactionReceipt, web3: Web3, bridgeAddress: string, _bridge: string) => {
+//   const UserRequestForSignatureAbi: AbiItem = HOME_AMB_ABI[_bridge].filter(
+//     (e: AbiItem) => e.type === 'event' && e.name === 'UserRequestForSignature'
+//   )[0]
+//   return filterEventsByAbiAMB(txReceipt, web3, bridgeAddress, _bridge, UserRequestForSignatureAbi)
+// }
 
-export const getForeignMessagesFromReceipt = (txReceipt: TransactionReceipt, web3: Web3, bridgeAddress: string) => {
-  const userRequestForAffirmationAbi: AbiItem = FOREIGN_AMB_ABI.filter(
+export const getForeignMessagesFromReceipt = (txReceipt: TransactionReceipt, web3: Web3, bridgeAddress: string, _bridge: string) => {
+  const userRequestForAffirmationAbi: AbiItem = FOREIGN_AMB_ABI[_bridge].filter(
     (e: AbiItem) => e.type === 'event' && e.name === 'UserRequestForAffirmation'
   )[0]
-  return filterEventsByAbi(txReceipt, web3, bridgeAddress, userRequestForAffirmationAbi)
+  if(_bridge === "NATIVE")
+    return filterEventsByAbiNative(txReceipt, web3, bridgeAddress, _bridge, userRequestForAffirmationAbi)
+  else
+    return filterEventsByAbiAMB(txReceipt, web3, bridgeAddress, _bridge, userRequestForAffirmationAbi)  
 }
+// export const getNativeForeignMessagesFromReceipt = (txReceipt: TransactionReceipt, web3: Web3, bridgeAddress: string, _bridge: string) => {
+//   const userRequestForAffirmationAbi: AbiItem = FOREIGN_AMB_ABI[_bridge].filter(
+//     (e: AbiItem) => e.type === 'event' && e.name === 'UserRequestForAffirmation'
+//   )[0]
+//   return filterEventsByAbiNative(txReceipt, web3, bridgeAddress, _bridge, userRequestForAffirmationAbi)
+// }
 
 // In some rare cases the block data is not available yet for the block of a new event detected
 // so this logic retry to get the block in case it fails

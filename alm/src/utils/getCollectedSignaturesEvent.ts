@@ -2,14 +2,14 @@ import Web3 from 'web3'
 import { Contract, EventData } from 'web3-eth-contract'
 import { homeBlockNumberProvider } from '../services/BlockNumberProvider'
 import { BLOCK_RANGE } from '../config/constants'
-import { NativeMessageObject, ArbitraryMessageObject } from './web3'
+import { MessageObject } from './web3'
 
 export const getCollectedSignaturesEvent = async (
   web3: Maybe<Web3>,
   contract: Maybe<Contract>,
   fromBlock: number,
   toBlock: number,
-  message: NativeMessageObject,
+  message: MessageObject,
   setCollectedSignaturesEvent: Function,
   subscriptions: number[]
 ) => {

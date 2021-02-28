@@ -1,7 +1,7 @@
 import React from 'react'
 import { TransactionReceipt } from 'web3-eth'
 import { useMessageConfirmations } from '../hooks/useMessageConfirmations'
-import { NativeMessageObject , ArbitraryMessageObject } from '../utils/web3'
+import { MessageObject } from '../utils/web3'
 import styled from 'styled-components'
 import { CONFIRMATIONS_STATUS } from '../config/constants'
 import { CONFIRMATIONS_STATUS_LABEL, CONFIRMATIONS_STATUS_LABEL_HOME } from '../config/descriptions'
@@ -36,19 +36,28 @@ const StatusDescription = styled.div`
 `
 
 export interface ConfirmationsContainerParams {
-  message: NativeMessageObject
+  message: MessageObject
   receipt: Maybe<TransactionReceipt>
   fromHome: boolean
   timestamp: number
+  isNative: boolean
 }
 
-export const ConfirmationsContainer = ({ message, receipt, fromHome, timestamp }: ConfirmationsContainerParams) => {
+export const ConfirmationsContainer = ({
+  message,
+  receipt,
+  fromHome,
+  timestamp,
+  isNative
+}: ConfirmationsContainerParams) => {
   const {
-    home: { name: homeName },
-    foreign: { name: foreignName }
+    homeNative: { name: homeName },
+    foreignNative: { name: foreignName }
   } = useStateProvider()
-  const { requiredSignatures, validatorList } = useValidatorContract({ fromHome, receipt })
-  const { blockConfirmations } = useBlockConfirmations({ fromHome, receipt })
+
+  const _bridge: string = isNative ? 'NATIVE' : 'AMB'
+  const { requiredSignatures, validatorList } = useValidatorContract({ fromHome, receipt, _bridge })
+  const { blockConfirmations } = useBlockConfirmations({ fromHome, receipt, _bridge })
   const { confirmations, status, executionData, signatureCollected, waitingBlocksResolved } = useMessageConfirmations({
     message,
     receipt,
@@ -56,10 +65,9 @@ export const ConfirmationsContainer = ({ message, receipt, fromHome, timestamp }
     timestamp,
     requiredSignatures,
     validatorList,
-    blockConfirmations
+    blockConfirmations,
+    _bridge
   })
-  
-  
 
   const statusLabel = fromHome ? CONFIRMATIONS_STATUS_LABEL_HOME : CONFIRMATIONS_STATUS_LABEL
 

@@ -1,5 +1,16 @@
-export const HOME_BRIDGE_ADDRESS: string = process.env.REACT_APP_COMMON_HOME_BRIDGE_ADDRESS || ''
-export const FOREIGN_BRIDGE_ADDRESS: string = process.env.REACT_APP_COMMON_FOREIGN_BRIDGE_ADDRESS || ''
+export const NATIVE: string = 'NATIVE'
+export const AMB: string = 'AMB'
+export const BRIDGES: string[] = [NATIVE, AMB]
+
+export const HOME_BRIDGE_ADDRESS: { [key: string]: string } = {
+  NATIVE: process.env.REACT_APP_NATIVE_HOME_BRIDGE_ADDRESS || '',
+  AMB: process.env.REACT_APP_ARBITRARY_MESSAGE_HOME_BRIDGE_ADDRESS || ''
+}
+
+export const FOREIGN_BRIDGE_ADDRESS: { [key: string]: string } = {
+  NATIVE: process.env.REACT_APP_NATIVE_FOREIGN_BRIDGE_ADDRESS || '',
+  AMB: process.env.REACT_APP_ARBITRARY_MESSAGE_FOREIGN_BRIDGE_ADDRESS || ''
+}
 
 export const HOME_RPC_URL: string = process.env.REACT_APP_COMMON_HOME_RPC_URL || ''
 export const FOREIGN_RPC_URL: string = process.env.REACT_APP_COMMON_FOREIGN_RPC_URL || ''
@@ -19,16 +30,28 @@ export const BLOCK_RANGE: number = 50
 export const ONE_DAY_TIMESTAMP: number = 86400
 export const THREE_DAYS_TIMESTAMP: number = 259200
 
-
 //AMB function hashes
 // export const EXECUTE_AFFIRMATION_HASH = 'e7a2c01f'
 // export const SUBMIT_SIGNATURE_HASH = '630cea8e'
 // export const EXECUTE_SIGNATURES_HASH = '3f7658fd'
 
+export const EXECUTE_AFFIRMATION_HASH: { [key: string]: string } = {
+  AMB: 'e7a2c01f',
+  NATIVE: '995b2cff'
+}
+export const SUBMIT_SIGNATURE_HASH: { [key: string]: string } = {
+  AMB: '630cea8e',
+  NATIVE: '630cea8e'
+}
+export const EXECUTE_SIGNATURES_HASH: { [key: string]: string } = {
+  AMB: '3f7658fd',
+  NATIVE: '232a2c1d'
+}
+
 //Native-to-erc functions hashes
-export const EXECUTE_AFFIRMATION_HASH = '995b2cff'
-export const SUBMIT_SIGNATURE_HASH = '630cea8e'
-export const EXECUTE_SIGNATURES_HASH = '232a2c1d'
+// export const EXECUTE_AFFIRMATION_HASH = '995b2cff'
+// export const SUBMIT_SIGNATURE_HASH = '630cea8e'
+// export const EXECUTE_SIGNATURES_HASH = '232a2c1d'
 
 export const CACHE_KEY_SUCCESS = 'success-confirmation-validator-'
 export const CACHE_KEY_FAILED = 'failed-confirmation-validator-'
