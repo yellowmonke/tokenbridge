@@ -32,7 +32,7 @@ export const MessageSelector = ({ messages, onMessageSelected }: MessageSelector
               onChange={() => setMessageIndex(i)}
             />
             <RadioButtonLabel htmlFor={i.toString()}>
-              {windowWidth < 700 ? formatTxHashExtended(message._hash) : message._hash}
+              {windowWidth < 700 ? formatTxHashExtended(message.id) : message.id}
             </RadioButtonLabel>
           </RadioButtonContainer>
         ))}

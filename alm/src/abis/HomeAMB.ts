@@ -1,8 +1,6 @@
-import { AbiItem } from 'web3-utils'
+import { AbiItems } from './AbiItems'
 
-interface AbiItems extends Array<AbiItem> {}
-
-export const abi: { [key: string]: AbiItems } = {
+const abi: { [key: string]: AbiItems } = {
   NATIVE: [
     {
       constant: true,
@@ -1828,4 +1826,4 @@ export const abi: { [key: string]: AbiItems } = {
   ]
 }
 
-// export default abi
+export default abi

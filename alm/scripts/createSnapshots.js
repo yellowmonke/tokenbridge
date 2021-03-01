@@ -28,7 +28,6 @@ const generateSnapshot = async (side, url, bridgeAddress, bridge) => {
 
   // Save chainId
   snapshot.chainId = await web3.eth.getChainId()
-  console.log(bridgeAddress)
   const bridgeContract = new web3.eth.Contract((bridge == "NATIVE" ? HOME_NATIVE_TO_ERC_ABI : HOME_AMB_ABI), bridgeAddress)
 
   // Save RequiredBlockConfirmationChanged events
